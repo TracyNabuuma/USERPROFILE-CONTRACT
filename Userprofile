@@ -1,0 +1,98 @@
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.30;
+
+contract UserProfile {
+    struct Profile {
+        string name;
+        uint256 age;
+        string email;
+        address walletAddress;
+        bool exists;
+    }
+    
+    // Mapping from user address to their profile
+    mapping(address => Profile) private profiles;
+    
+    // Event emitted when a new profile is registered
+    event ProfileRegistered(address indexed userAddress, string name, uint256 age, string email);
+    
+    // Event emitted when a profile is updated
+    event ProfileUpdated(address indexed userAddress, string name, uint256 age, string email);
+    
+    /**
+     * @dev Register a new user profile
+     * @param _name User's name
+     * @param _age User's age
+     * @param _email User's email
+     */
+    function register(string memory _name, uint256 _age, string memory _email) external {
+        require(bytes(_name).length > 0, "Name cannot be empty");
+        require(_age > 0, "Age must be greater than 0");
+        require(bytes(_email).length > 0, "Email cannot be empty");
+        require(!profiles[msg.sender].exists, "Profile already exists for this address");
+        
+        profiles[msg.sender] = Profile({
+            name: _name,
+            age: _age,
+            email: _email,
+            walletAddress: msg.sender,
+            exists: true
+        });
+        
+        emit ProfileRegistered(msg.sender, _name, _age, _email);
+    }
+    
+    /**
+     * @dev Update an existing user profile
+     * @param _name Updated name
+     * @param _age Updated age
+     * @param _email Updated email
+     */
+    function updateProfile(string memory _name, uint256 _age, string memory _email) external {
+        require(profiles[msg.sender].exists, "Profile does not exist");
+        require(bytes(_name).length > 0, "Name cannot be empty");
+        require(_age > 0, "Age must be greater than 0");
+        require(bytes(_email).length > 0, "Email cannot be empty");
+        
+        Profile storage profile = profiles[msg.sender];
+        profile.name = _name;
+        profile.age = _age;
+        profile.email = _email;
+        
+        emit ProfileUpdated(msg.sender, _name, _age, _email);
+    }
+    
+    /**
+     * @dev Get profile information for the calling user
+     * @return name User's name
+     * @return age User's age
+     * @return email User's email
+     * @return walletAddress User's wallet address
+     */
+    function getProfile() external view returns (
+        string memory name,
+        uint256 age,
+        string memory email,
+        address walletAddress
+    ) {
+        require(profiles[msg.sender].exists, "Profile does not exist");
+        
+        Profile memory profile = profiles[msg.sender];
+        return (
+            profile.name,
+            profile.age,
+            profile.email,
+            profile.walletAddress
+        );
+    }
+    
+    /**
+     * @dev Check if a profile exists for the calling user
+     * @return bool True if profile exists, false otherwise
+     */
+    function profileExists() external view returns (bool) {
+        return profiles[msg.sender].exists;
+    }
+
+}
